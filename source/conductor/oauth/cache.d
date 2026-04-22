@@ -1,7 +1,7 @@
-module composer.oauth.cache;
+module conductor.oauth.cache;
 
-import composer.oauth.portal : OAuth;
-import composer.oauth.token : TokenBundle;
+import conductor.oauth.portal : OAuth;
+import conductor.oauth.token : TokenBundle;
 import std.base64 : Base64URLNoPadding;
 import std.digest.sha : sha256Of;
 import std.file : exists, mkdirRecurse, readText, remove, write;
@@ -83,7 +83,7 @@ private:
 
 string defaultCacheDirectory()
 {
-    return buildPath(expandTilde("~/.cache"), "composer", "oauth");
+    return buildPath(expandTilde("~/.cache"), "conductor", "oauth");
 }
 
 unittest

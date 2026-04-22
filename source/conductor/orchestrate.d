@@ -1,7 +1,7 @@
-module composer.orchestrate;
+module conductor.orchestrate;
 
-import composer.http : Response, sendRequest = send;
-import composer.query : composeURL = buildURL;
+import conductor.http : Response, sendRequest = send;
+import conductor.query : composeURL = buildURL;
 import core.thread : Thread;
 import core.time : dur;
 import std.datetime : Clock, Duration, SysTime;
@@ -11,19 +11,23 @@ public:
 
 struct Orchestrator
 {
-private:
-    SysTime lastRequestTime;
-
-public:
-    HTTP client;
     string host;
     long minIntervalMs;
 
-    this(string host, long minIntervalMs = 0)
+private:
+    HTTP _http;
+    bool _httpInit;
+    SysTime lastRequestTime;
+
+public:
+    ref HTTP client()
     {
-        this.client = HTTP();
-        this.host = host;
-        this.minIntervalMs = minIntervalMs;
+        if (!_httpInit)
+        {
+            _http = HTTP();
+            _httpInit = true;
+        }
+        return _http;
     }
 
     void rateLimit()

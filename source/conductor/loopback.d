@@ -1,6 +1,6 @@
-module composer.loopback;
+module conductor.loopback;
 
-import composer.query : parseQuery;
+import conductor.query : parseQuery;
 import core.time : Duration;
 import std.conv : to;
 import std.exception : enforce;

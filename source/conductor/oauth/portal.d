@@ -1,10 +1,10 @@
-module composer.oauth.portal;
+module conductor.oauth.portal;
 
-import composer.http : Response, send;
-import composer.loopback : LoopbackRequest, LoopbackServer;
-import composer.oauth.cache : TokenCache;
-import composer.oauth.token : OAuthError, TokenBundle;
-import composer.query : buildURL, formEncode;
+import conductor.http : Response, send;
+import conductor.loopback : LoopbackRequest, LoopbackServer;
+import conductor.oauth.cache : TokenCache;
+import conductor.oauth.token : OAuthError, TokenBundle;
+import conductor.query : buildURL, formEncode;
 import core.time : Duration, dur;
 import std.base64 : Base64URLNoPadding;
 import std.conv : to;

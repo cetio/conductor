@@ -1,6 +1,6 @@
-module composer.oauth.token;
+module conductor.oauth.token;
 
-import composer.oauth.portal : OAuth;
+import conductor.oauth.portal : OAuth;
 import std.conv : to;
 import std.datetime : Clock;
 import std.json : JSONType, JSONValue;

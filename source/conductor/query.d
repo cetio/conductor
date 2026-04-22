@@ -1,4 +1,4 @@
-module composer.query;
+module conductor.query;
 
 import std.array : join;
 import std.string : indexOf, replace, split;

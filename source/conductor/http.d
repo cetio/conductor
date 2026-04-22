@@ -1,7 +1,10 @@
-module composer.http;
+module conductor.http;
 
+public import std.json : JSONValue, JSONOptions, JSONType, JSONException, parseJSON;
+static import std.json;
 import std.net.curl : HTTP;
 import std.string : toLower;
+import std.traits : FieldNameTuple, isAggregateType, isArray;
 
 public:
 
@@ -12,6 +15,53 @@ struct Response
     string[string] headers;
     ubyte[] content;
 }
+
+JSONValue toJSON(T)(T val)
+{
+    static if (is(T == JSONValue))
+        return val;
+    else static if (__traits(compiles, { auto j = JSONValue(val); }))
+        return JSONValue(val);
+    else
+    {
+        JSONValue ret;
+        static if (isAggregateType!T)
+        {
+            static foreach (F; FieldNameTuple!T)
+                ret[F] = toJSON(__traits(getMember, val, F));
+        }
+        else static if (isArray!T)
+        {
+            ret = JSONValue.emptyArray;
+            foreach (u; val)
+                ret.array ~= toJSON(u);
+        }
+
+        return ret;
+    }
+}
+
+
+Response send(T)(
+    ref HTTP http,
+    HTTP.Method method,
+    string url,
+    T data,
+    string contentType = "application/json"
+)
+    if (!is(T : const(ubyte)[]))
+    => send(http, method, url, cast(const(ubyte)[])data.toJSON().toString(), contentType);
+
+void post(T)(
+    ref HTTP http,
+    string url,
+    T data,
+    void delegate(ubyte[]) success,
+    void delegate(ubyte[]) failure,
+)
+    if (!is(T == string))
+    => post(http, url, data.toJSON().toString(), success, failure, "application/json");
+
 
 Response send(
     ref HTTP http,
@@ -107,6 +157,7 @@ void post(
     string postData,
     void delegate(ubyte[]) success,
     void delegate(ubyte[]) failure,
+    string contentType = "application/x-www-form-urlencoded",
 )
 {
     Response response = send(
@@ -114,7 +165,7 @@ void post(
         HTTP.Method.post,
         url,
         cast(const(ubyte)[])postData,
-        "application/x-www-form-urlencoded",
+        contentType,
     );
 
     if (response.status >= 200 && response.status < 300)
