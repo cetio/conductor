@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/composer
+composer.so
+composer.dylib
+composer.dll
+composer.a
+composer.lib
+composer-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst

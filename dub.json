@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"cet"
+	],
+	"copyright": "Copyright © 2026, cet",
+	"description": "HTTP, OAuth, and network orchestration utilities for easy API integrations.",
+	"license": "AGPL-3.0-only",
+	"name": "composer"
+}
