@@ -7,3 +7,4 @@ import conductor.loopback;
 import conductor.oauth;
 import conductor.orchestrate;
 import conductor.query;
+import conductor.serialize;

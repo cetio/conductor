@@ -4,7 +4,8 @@ public import std.json : JSONValue, JSONOptions, JSONType, JSONException, parseJ
 static import std.json;
 import std.net.curl : HTTP;
 import std.string : toLower;
-import std.traits : FieldNameTuple, isAggregateType, isArray;
+
+public import conductor.serialize.json : toJSON;
 
 public:
 
@@ -15,32 +16,6 @@ struct Response
     string[string] headers;
     ubyte[] content;
 }
-
-JSONValue toJSON(T)(T val)
-{
-    static if (is(T == JSONValue))
-        return val;
-    else static if (__traits(compiles, { auto j = JSONValue(val); }))
-        return JSONValue(val);
-    else
-    {
-        JSONValue ret;
-        static if (isAggregateType!T)
-        {
-            static foreach (F; FieldNameTuple!T)
-                ret[F] = toJSON(__traits(getMember, val, F));
-        }
-        else static if (isArray!T)
-        {
-            ret = JSONValue.emptyArray;
-            foreach (u; val)
-                ret.array ~= toJSON(u);
-        }
-
-        return ret;
-    }
-}
-
 
 Response send(T)(
     ref HTTP http,
