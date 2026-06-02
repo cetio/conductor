@@ -1,5 +1,7 @@
 # Conductor
 
+[![License](https://img.shields.io/badge/License-AGPL--3-blue)](LICENSE.txt)
+
 Conductor is a D library for HTTP, OAuth, serialization, and network orchestration. It is intended to provide small, direct utilities for API integrations without pulling in a large framework.
 
 ## Modules
