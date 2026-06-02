@@ -246,3 +246,10 @@ unittest
     assert(json["value"].integer == 5);
     assert(fromJSON!(Wrapper!int)(json).value == 5);
 }
+
+unittest
+{
+    int* ptr = null;
+    assert(toJSON(ptr) == JSONValue(null));
+    assert(fromJSON!(int*)(JSONValue(null)) is null);
+}
