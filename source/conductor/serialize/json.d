@@ -76,6 +76,12 @@ JSONValue toJSON(T)(T val)
         }}
         return ret;
     }
+    else static if (isPointer!T)
+    {
+        if (val == null)
+            return JSONValue(null);
+        return JSONValue(cast(size_t)val);
+    }
     else
         static assert(0, "Cannot serialize type"~T.stringof~" to JSON.");
 }
@@ -156,8 +162,9 @@ T fromJSON(T)(JSONValue json)
     {
         if (json.type != JSONType.array)
             throw new Exception("Expected array for"~T.stringof);
-        if (json.array.length != T.length)
+        else if (json.array.length != T.length)
             throw new Exception("Array length mismatch for"~T.stringof);
+
         T ret = T.init;
         static foreach (i; 0..T.length)
             ret[i] = fromJSON!(typeof(ret[0]))(json.array[i]);
@@ -169,7 +176,7 @@ T fromJSON(T)(JSONValue json)
         {
             if (json.type == JSONType.null_)
                 return null;
-            if (json.type != JSONType.string)
+            else if (json.type != JSONType.string)
                 throw new Exception("Expected string for"~T.stringof);
             return json.str;
         }
@@ -177,8 +184,9 @@ T fromJSON(T)(JSONValue json)
         {
             if (json.type == JSONType.null_)
                 return null;
-            if (json.type != JSONType.array)
+            else if (json.type != JSONType.array)
                 throw new Exception("Expected array for"~T.stringof);
+
             T ret = new typeof(T.init[0])[](json.array.length);
             foreach (i; 0..json.array.length)
                 ret[i] = fromJSON!(typeof(T.init[0]))(json.array[i]);
@@ -190,7 +198,7 @@ T fromJSON(T)(JSONValue json)
         static assert(is(KeyType!T == string), "Only string-keyed AAs are supported for JSON.");
         if (json.type == JSONType.null_)
             return null;
-        if (json.type != JSONType.object)
+        else if (json.type != JSONType.object)
             throw new Exception("Expected object for"~T.stringof);
         T ret;
         foreach (string key, JSONValue value; json.object)
@@ -225,6 +233,17 @@ T fromJSON(T)(JSONValue json)
             }}
         }}
         return ret;
+    }
+    else static if (isPointer!T)
+    {
+        if (json.type == JSONType.null_)
+            return T.init;
+        else if (json.type == JSONType.integer)
+            return cast(T)json.integer;
+        else if (json.type == JSONType.string)
+            return cast(T)json.str;
+        else
+            throw new Exception("Expected integer or string for pointer type"~T.stringof);
     }
     else
         static assert(0, "Cannot deserialize JSON to type"~T.stringof);
