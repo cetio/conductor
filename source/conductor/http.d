@@ -83,9 +83,7 @@ Response send(
         };
     }
     else
-    {
         http.onSend = null;
-    }
 
     http.onReceiveStatusLine = (HTTP.StatusLine line) {
         ret.status = line.code;
