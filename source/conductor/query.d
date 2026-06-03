@@ -4,8 +4,6 @@ import std.array : join;
 import std.string : indexOf, replace, split;
 import std.uri : encode;
 
-public:
-
 string encodeQueryComponent(string value)
 {
     return encode(value).replace("+", "%2B");

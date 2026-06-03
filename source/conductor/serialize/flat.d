@@ -3,8 +3,6 @@ module conductor.serialize.flat;
 import std.algorithm.mutation : reverse;
 import std.traits;
 
-public:
-
 enum Endian
 {
     Native,

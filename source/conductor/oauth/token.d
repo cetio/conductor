@@ -5,8 +5,6 @@ import std.conv : to;
 import std.datetime : Clock;
 import std.json : JSONType, JSONValue;
 
-public:
-
 class OAuthError : Exception
 {
     this(string message)

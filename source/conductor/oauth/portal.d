@@ -15,8 +15,6 @@ import std.process : spawnProcess;
 import std.random : unpredictableSeed;
 import std.string : split;
 
-public:
-
 class OAuth
 {
 private:

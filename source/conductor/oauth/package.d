@@ -1,7 +1,5 @@
 module conductor.oauth;
 
-public:
-
-import conductor.oauth.cache;
-import conductor.oauth.portal;
-import conductor.oauth.token;
+public import conductor.oauth.cache;
+public import conductor.oauth.portal;
+public import conductor.oauth.token;

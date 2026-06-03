@@ -1,13 +1,12 @@
 module conductor.http;
 
-public import std.json : JSONValue, JSONOptions, JSONType, JSONException, parseJSON;
+public import std.json : JSONValue, JSONOptions, JSONType, JSONException;
+// I don't like this import being here but it will probably break things without.
+public import conductor.serialize.json : toJSON;
+
 static import std.json;
 import std.net.curl : HTTP;
 import std.string : toLower;
-
-public import conductor.serialize.json : toJSON;
-
-public:
 
 struct Response
 {

@@ -5,16 +5,12 @@ import std.json : JSONValue, JSONType;
 import std.traits;
 import std.typecons : Nullable;
 
-public:
-
 struct Name
 {
     string value;
 }
 
-struct Required
-{
-}
+struct Required { }
 
 JSONValue toJSON(T)(T val)
 {

@@ -8,11 +8,8 @@ import std.file : exists, mkdirRecurse, readText, remove, write;
 import std.json : parseJSON;
 import std.path : buildPath, expandTilde;
 
-public:
-
 class TokenCache
 {
-public:
     string directory;
 
     this(string directory = null)

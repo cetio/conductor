@@ -8,8 +8,6 @@ import std.socket;
 import std.string : indexOf, split, splitLines;
 import std.uni : toLower;
 
-public:
-
 struct LoopbackRequest
 {
     string method;

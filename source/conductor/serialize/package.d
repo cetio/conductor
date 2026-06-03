@@ -1,6 +1,4 @@
 module conductor.serialize;
 
-public:
-
-import conductor.serialize.json;
-import conductor.serialize.flat;
+public import conductor.serialize.json;
+public import conductor.serialize.flat;

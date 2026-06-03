@@ -7,8 +7,6 @@ import core.time : dur;
 import std.datetime : Clock, Duration, SysTime;
 import std.net.curl : HTTP;
 
-public:
-
 struct Orchestrator
 {
     string host;

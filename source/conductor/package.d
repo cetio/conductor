@@ -1,10 +1,8 @@
 module conductor;
 
-public:
-
-import conductor.http;
-import conductor.loopback;
-import conductor.oauth;
-import conductor.orchestrate;
-import conductor.query;
-import conductor.serialize;
+public import conductor.http;
+public import conductor.loopback;
+public import conductor.oauth;
+public import conductor.orchestrate;
+public import conductor.query;
+public import conductor.serialize;
