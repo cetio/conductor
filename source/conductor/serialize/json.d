@@ -1,3 +1,4 @@
+/// Reflection-driven `toJSON` and `fromJSON` with `@Name` and `@Required` UDAs.
 module conductor.serialize.json;
 
 import std.conv : to;
@@ -5,13 +6,28 @@ import std.json : JSONValue, JSONType;
 import std.traits;
 import std.typecons : Nullable;
 
+/// UDA to override the JSON field name for a struct member.
 struct Name
 {
+    /// The JSON key to use instead of the field name.
     string value;
 }
 
+/// UDA to mark a struct member as required during deserialization.
 struct Required { }
 
+/**
+ * Serializes a value to JSON using compile-time reflection.
+ *
+ * Supports structs, enums, arrays, associative arrays, Nullable,
+ * and primitive types. String-keyed AAs only.
+ *
+ * Params:
+ *  val = The value to serialize.
+ *
+ * Returns:
+ *  The JSON representation.
+ */
 JSONValue toJSON(T)(T val)
 {
     static if (is(T == JSONValue))
@@ -82,6 +98,21 @@ JSONValue toJSON(T)(T val)
         static assert(0, "Cannot serialize type"~T.stringof~" to JSON.");
 }
 
+/**
+ * Deserializes a JSON value to type T using compile-time reflection.
+ *
+ * Supports the same types as `toJSON`. Missing `@Required` fields throw.
+ * Classes must have a default constructor.
+ *
+ * Params:
+ *  json = The JSON value to deserialize.
+ *
+ * Returns:
+ *  The deserialized value.
+ *
+ * Throws:
+ *  Exception if the JSON type does not match T or a required field is missing.
+ */
 T fromJSON(T)(JSONValue json)
 {
     static if (is(T == JSONValue))
@@ -259,6 +290,7 @@ T fromJSON(T)(JSONValue json)
 
 private:
 
+/// Gets the JSON field name for a struct member, respecting `@Name`.
 template jsonFieldName(T, string field)
 {
     enum jsonFieldName = (){
@@ -270,6 +302,7 @@ template jsonFieldName(T, string field)
     }();
 }
 
+/// True if the struct member has the `@Required` UDA.
 template isRequiredField(T, string field)
 {
     enum isRequiredField = hasUDA!(__traits(getMember, T, field), Required);
