@@ -1,17 +1,27 @@
+/// Persistent on-disk cache for OAuth token bundles.
 module conductor.oauth.cache;
 
 import conductor.oauth.portal : OAuth;
 import conductor.oauth.token : TokenBundle;
 import std.base64 : Base64URLNoPadding;
+import std.datetime : Clock;
 import std.digest.sha : sha256Of;
 import std.file : exists, mkdirRecurse, readText, remove, write;
 import std.json : parseJSON;
 import std.path : buildPath, expandTilde;
 
+/// Stores and retrieves OAuth tokens in JSON files keyed by credential hash.
 class TokenCache
 {
+    /// Directory where token files are stored. Defaults to ~/.cache/conductor/oauth.
     string directory;
 
+    /**
+     * Constructs a TokenCache.
+     *
+     * Params:
+     *  directory = The cache directory. Null uses the default.
+     */
     this(string directory = null)
     {
         if (directory != null)
@@ -20,6 +30,18 @@ class TokenCache
             this.directory = defaultCacheDirectory();
     }
 
+    /**
+     * Loads a cached token for the given OAuth configuration.
+     *
+     * Returns an empty bundle if no cache entry exists or if the file
+     * is corrupt (in which case it is deleted).
+     *
+     * Params:
+     *  oauth = The OAuth configuration.
+     *
+     * Returns:
+     *  The cached token bundle, or an empty one.
+     */
     TokenBundle load(OAuth oauth)
     {
         if (oauth is null)
@@ -38,6 +60,15 @@ class TokenCache
         }
     }
 
+    /**
+     * Saves a token bundle to disk.
+     *
+     * Deletes the cache entry if the token is empty.
+     *
+     * Params:
+     *  oauth = The OAuth configuration.
+     *  token = The token bundle to cache.
+     */
     void save(OAuth oauth, TokenBundle token)
     {
         if (oauth is null || token.empty())
@@ -50,6 +81,12 @@ class TokenCache
         write(cachePath(oauth), token.toJson().toString());
     }
 
+    /**
+     * Deletes a cached token for the given OAuth configuration.
+     *
+     * Params:
+     *  oauth = The OAuth configuration.
+     */
     void clear(OAuth oauth)
     {
         if (oauth is null)
@@ -129,7 +166,8 @@ unittest
     token.refreshToken = "refresh";
     token.grantedScope = "scope";
     token.tokenType = "Bearer";
-    token.expiry = 9999;
+    token.expiresIn = 3600;
+    token.obtainedAt = Clock.currTime().toUnixTime();
 
     cache.save(oauth, token);
 
