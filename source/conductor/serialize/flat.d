@@ -1,8 +1,10 @@
+/// Struct-to-byte serialization with `@Endian` and `@StorageKind` UDAs.
 module conductor.serialize.flat;
 
 import std.algorithm.mutation : reverse;
 import std.traits;
 
+/// Byte order for serialization.
 enum Endian
 {
     Native,
@@ -10,13 +12,30 @@ enum Endian
     Little,
 }
 
+/// How dynamic array length is represented in the byte stream.
 enum StorageKind
 {
+    /// No length prefix; array consumes all remaining bytes.
     None,
+    /// Length is prefixed as a size_t.
     Length,
+    /// Array is terminated by an element of init value.
     Terminated,
 }
 
+/**
+ * Serializes a value to raw bytes using compile-time reflection.
+ *
+ * Struct fields may use `@Endian(Endian.Big)` or `@Endian(Endian.Little)`
+ * to override the default. Dynamic arrays must have `@StorageKind`.
+ *
+ * Params:
+ *  val = The value to serialize.
+ *  endian = The default byte order.
+ *
+ * Returns:
+ *  The serialized byte array.
+ */
 ubyte[] toBytes(T)(T val, Endian endian = Endian.Native)
 {
     ubyte[] ret;
@@ -66,12 +85,33 @@ ubyte[] toBytes(T)(T val, Endian endian = Endian.Native)
     return ret;
 }
 
+/**
+ * Deserializes raw bytes to type T using compile-time reflection.
+ *
+ * Params:
+ *  data = The byte array to read from. Consumed in-place for arrays.
+ *  endian = The default byte order.
+ *
+ * Returns:
+ *  The deserialized value.
+ */
 T fromBytes(T)(ref ubyte[] data, Endian endian = Endian.Native)
 {
     size_t offset;
     return fromBytesAt!T(data, endian, offset);
 }
 
+/**
+ * Deserializes a dynamic array with an explicit storage kind.
+ *
+ * Params:
+ *  data = The byte array to read from.
+ *  endian = The byte order.
+ *  kind = How the array length is represented.
+ *
+ * Returns:
+ *  The deserialized array.
+ */
 T fromBytes(T)(ref ubyte[] data, Endian endian, StorageKind kind)
     if (isDynamicArray!T)
 {
@@ -204,6 +244,7 @@ T fromBytesAt(T)(
     return cast(T)ret;
 }
 
+/// Gets the `@StorageKind` UDA value for a dynamic array field.
 template fieldStorageKind(T, string field)
 {
     enum fieldStorageKind = (){
@@ -213,8 +254,10 @@ template fieldStorageKind(T, string field)
     }();
 }
 
+/// True for types that are references rather than value types.
 enum isReferenceType(A) = is(A == class) || is(A == interface) || isPointer!A || isDynamicArray!A;
 
+/// Returns a void pointer to a variable, regardless of whether it is a reference type.
 pragma(inline, true)
 @trusted scope void* reference(alias V)()
 {
@@ -224,6 +267,7 @@ pragma(inline, true)
         return cast(void*)&V;
 }
 
+/// Reverses the byte order of an array if endian conversion is needed.
 ubyte[] endianize(ubyte[] arr, Endian endian)
 {
     version (BigEndian)
@@ -239,7 +283,7 @@ ubyte[] endianize(ubyte[] arr, Endian endian)
     return arr;
 }
 
-// This could be used elsewhere, but generally it only lives here for simplicity.
+/// Allocates or initializes a type T with optional constructor args.
 pragma(inline, true)
 T factory(T, ARGS...)(ARGS args)
 {
