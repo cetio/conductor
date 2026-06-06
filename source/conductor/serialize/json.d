@@ -211,7 +211,19 @@ T fromJSON(T)(JSONValue json)
     {
         if (json.type != JSONType.object)
             throw new Exception("Expected object for"~T.stringof);
-        T ret = T.init;
+        static if (is(T == class))
+        {
+            static assert(
+                __traits(compiles, new T()),
+                "Cannot deserialize JSON to class "~T.stringof~" without a default constructor."
+            );
+            if (json.type == JSONType.null_)
+                return null;
+            T ret = new T();
+        }
+        else
+            T ret = T.init;
+            
         static foreach (string field; FieldNameTuple!T)
         {{
             static if (__traits(compiles, typeof(__traits(getMember, ret, field))))

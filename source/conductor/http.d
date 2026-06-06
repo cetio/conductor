@@ -77,13 +77,17 @@ Response send(
     }
     else if (method == HTTP.Method.del)
     {
+        http.contentLength = 0;
         http.onSend = (void[] buffer) {
             auto _ = buffer;
-            return cast(size_t) 0;
+            return cast(size_t)0;
         };
     }
     else
+    {
+        http.contentLength = 0;
         http.onSend = null;
+    }
 
     http.onReceiveStatusLine = (HTTP.StatusLine line) {
         ret.status = line.code;

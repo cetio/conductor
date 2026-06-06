@@ -239,6 +239,7 @@ ubyte[] endianize(ubyte[] arr, Endian endian)
     return arr;
 }
 
+// This could be used elsewhere, but generally it only lives here for simplicity.
 pragma(inline, true)
 T factory(T, ARGS...)(ARGS args)
 {
@@ -252,7 +253,7 @@ T factory(T, ARGS...)(ARGS args)
     else static if (isReferenceType!T)
     {
         static if (ARGS.length == 0)
-            return new T;
+            return new T();
         else
             return new T(args);
     }
