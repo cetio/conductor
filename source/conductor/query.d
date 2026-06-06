@@ -1,14 +1,36 @@
+/// Query string encoding, decoding, form encoding, and URL building.
 module conductor.query;
 
 import std.array : join;
 import std.string : indexOf, replace, split;
 import std.uri : encode;
 
+/**
+ * Encodes a query component, ensuring '+' is percent-encoded.
+ *
+ * The standard `encode` leaves '+' unencoded, which causes ambiguity
+ * in form data where '+' represents a space.
+ *
+ * Params:
+ *  value = The raw query component.
+ *
+ * Returns:
+ *  The percent-encoded component.
+ */
 string encodeQueryComponent(string value)
 {
     return encode(value).replace("+", "%2B");
 }
 
+/**
+ * Decodes a query component, converting '+' to space.
+ *
+ * Params:
+ *  value = The encoded query component.
+ *
+ * Returns:
+ *  The decoded component.
+ */
 string decodeQueryComponent(string value)
 {
     char[] ret;
@@ -43,6 +65,15 @@ string decodeQueryComponent(string value)
     return ret.idup;
 }
 
+/**
+ * Encodes an associative array as an application/x-www-form-urlencoded string.
+ *
+ * Params:
+ *  fields = The key-value pairs to encode.
+ *
+ * Returns:
+ *  The encoded form string.
+ */
 string formEncode(string[string] fields)
 {
     string[] pairs;
@@ -53,6 +84,17 @@ string formEncode(string[string] fields)
     return pairs.join("&");
 }
 
+/**
+ * Builds a full URL from a base URL, path, and optional query parameters.
+ *
+ * Params:
+ *  baseUrl = The base URL (e.g. "https://api.example.com").
+ *  path = The request path.
+ *  query = Optional query parameters.
+ *
+ * Returns:
+ *  The complete URL with encoded query string.
+ */
 string buildURL(string baseUrl, string path, string[string] query = null)
 {
     string ret = baseUrl~path;
@@ -63,6 +105,17 @@ string buildURL(string baseUrl, string path, string[string] query = null)
     return ret;
 }
 
+/**
+ * Parses a raw query string into key-value pairs.
+ *
+ * Handles missing values and empty pairs gracefully.
+ *
+ * Params:
+ *  raw = The raw query string (e.g. "a=1&b=2").
+ *
+ * Returns:
+ *  An associative array of decoded keys and values.
+ */
 string[string] parseQuery(string raw)
 {
     string[string] ret;
