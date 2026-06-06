@@ -1,3 +1,4 @@
+/// HTTP request/response helpers and thin wrappers over std.net.curl.
 module conductor.http;
 
 public import std.json : JSONValue, JSONOptions, JSONType, JSONException;
@@ -8,14 +9,32 @@ static import std.json;
 import std.net.curl : HTTP;
 import std.string : toLower;
 
+/// Response data from an HTTP request.
 struct Response
 {
+    /// HTTP status code.
     ushort status;
+    /// HTTP reason phrase.
     string reason;
+    /// Response headers keyed by lower-cased name.
     string[string] headers;
+    /// Raw response body content.
     ubyte[] content;
 }
 
+/**
+ * Sends an HTTP request with serialized JSON data.
+ *
+ * Params:
+ *  http = The curl HTTP instance.
+ *  method = The HTTP method.
+ *  url = The request URL.
+ *  data = The payload to serialize to JSON.
+ *  contentType = The Content-Type header value.
+ *
+ * Returns:
+ *  The HTTP response.
+ */
 Response send(T)(
     ref HTTP http,
     HTTP.Method method,
@@ -26,6 +45,16 @@ Response send(T)(
     if (!is(T : const(ubyte)[]))
     => send(http, method, url, cast(const(ubyte)[])data.toJSON().toString(), contentType);
 
+/**
+ * Sends a POST request with serialized JSON data and delegates for success/failure.
+ *
+ * Params:
+ *  http = The curl HTTP instance.
+ *  url = The request URL.
+ *  data = The payload to serialize to JSON.
+ *  success = Delegate called on a 2xx response.
+ *  failure = Delegate called on a non-2xx response.
+ */
 void post(T)(
     ref HTTP http,
     string url,
@@ -37,6 +66,23 @@ void post(T)(
     => post(http, url, data.toJSON().toString(), success, failure, "application/json");
 
 
+/**
+ * Sends an HTTP request with raw byte content.
+ *
+ * Handles GET, POST, PUT, PATCH, and DELETE with appropriate onSend behavior.
+ * Response headers are lower-cased for consistent lookup.
+ *
+ * Params:
+ *  http = The curl HTTP instance.
+ *  method = The HTTP method.
+ *  url = The request URL.
+ *  content = Raw request body. May be null for GET/DELETE.
+ *  contentType = The Content-Type header value.
+ *  headers = Additional request headers.
+ *
+ * Returns:
+ *  The HTTP response.
+ */
 Response send(
     ref HTTP http,
     HTTP.Method method,
@@ -110,6 +156,15 @@ Response send(
     return ret;
 }
 
+/**
+ * Sends a GET request and dispatches to success or failure delegates.
+ *
+ * Params:
+ *  http = The curl HTTP instance.
+ *  url = The request URL.
+ *  success = Delegate called on a 2xx response.
+ *  failure = Delegate called on a non-2xx response.
+ */
 void get(
     ref HTTP http,
     string url,
@@ -127,6 +182,17 @@ void get(
         failure(response.content);
 }
 
+/**
+ * Sends a POST request with raw string data and delegates for success/failure.
+ *
+ * Params:
+ *  http = The curl HTTP instance.
+ *  url = The request URL.
+ *  postData = The raw request body.
+ *  success = Delegate called on a 2xx response.
+ *  failure = Delegate called on a non-2xx response.
+ *  contentType = The Content-Type header value.
+ */
 void post(
     ref HTTP http,
     string url,
