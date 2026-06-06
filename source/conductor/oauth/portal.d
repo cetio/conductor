@@ -1,3 +1,4 @@
+/// OAuth 2.0 authorization-code flow with PKCE, token caching, and revocation.
 module conductor.oauth.portal;
 
 import conductor.http : Response, send;
@@ -15,6 +16,7 @@ import std.process : spawnProcess;
 import std.random : unpredictableSeed;
 import std.string : split;
 
+/// Manages OAuth 2.0 credentials, authorization, refresh, and revocation.
 class OAuth
 {
 private:
@@ -26,13 +28,39 @@ private:
     Duration timeout;
 
 public:
+    /// On-disk cache for tokens. Initialized automatically if null.
     TokenCache cache;
+    /// OAuth client ID.
     string clientId;
+    /// OAuth client secret.
     string clientSecret;
+    /// Authorization endpoint URL.
     string authorizeUrl;
+    /// Token endpoint URL.
     string tokenUrl;
+    /// Revocation endpoint URL. May be null.
     string revokeUrl;
 
+    /**
+     * Constructs an OAuth configuration.
+     *
+     * Params:
+     *  clientId = The OAuth client ID.
+     *  clientSecret = The OAuth client secret.
+     *  authorizeUrl = The authorization endpoint.
+     *  tokenUrl = The token endpoint.
+     *  revokeUrl = The revocation endpoint. May be null.
+     *  onLaunch = Delegate called with the authorization URL. Defaults to opening the system browser.
+     *  onFailure = Delegate returning HTML for a failed authorization. Defaults to a generic error page.
+     *  onMismatch = Delegate returning HTML for a state mismatch. Defaults to a generic mismatch page.
+     *  onIncomplete = Delegate returning HTML for a missing code. Defaults to a generic incomplete page.
+     *  onSuccess = Delegate returning HTML for successful authorization. Defaults to a generic success page.
+     *  timeout = Maximum time to wait for the loopback callback.
+     *  cache = Token cache. A default cache is created if null.
+     *
+     * Throws:
+     *  OAuthError if clientId, clientSecret, authorizeUrl, or tokenUrl is null.
+     */
     this(
         string clientId,
         string clientSecret,
@@ -94,6 +122,28 @@ public:
             : onSuccess;
     }
 
+    /**
+     * Creates an OAuth configuration from a JSON credentials object.
+     *
+     * Accepts direct objects and Google-style "web" or "installed" wrappers.
+     * Automatically sets the Google revoke URL when token_uri matches Google.
+     *
+     * Params:
+     *  json = The JSON credentials object.
+     *  onLaunch = See constructor.
+     *  onFailure = See constructor.
+     *  onMismatch = See constructor.
+     *  onIncomplete = See constructor.
+     *  onSuccess = See constructor.
+     *  timeout = See constructor.
+     *  cache = See constructor.
+     *
+     * Returns:
+     *  The parsed OAuth configuration.
+     *
+     * Throws:
+     *  OAuthError if the JSON is not an object.
+     */
     static OAuth fromJSON(
         JSONValue json,
         void delegate(string) onLaunch = null,
@@ -116,13 +166,13 @@ public:
         if (json.type != JSONType.object)
             throw new OAuthError("OAuth JSON must be an object.");
 
-        string revokeUrl = "revoke_uri" in json ? json["revoke_uri"].str : null;
-        if (revokeUrl == null &&
+        string revokeUrlValue = "revoke_uri" in json ? json["revoke_uri"].str : null;
+        if (revokeUrlValue == null &&
             "token_uri" in json &&
             json["token_uri"].type == JSONType.string &&
             json["token_uri"].str == "https://oauth2.googleapis.com/token")
         {
-            revokeUrl = "https://oauth2.googleapis.com/revoke";
+            revokeUrlValue = "https://oauth2.googleapis.com/revoke";
         }
 
         return new OAuth(
@@ -130,7 +180,7 @@ public:
             "client_secret" in json ? json["client_secret"].str : null,
             "auth_uri" in json ? json["auth_uri"].str : null,
             "token_uri" in json ? json["token_uri"].str : null,
-            revokeUrl,
+            revokeUrlValue,
             onLaunch,
             onFailure,
             onMismatch,
@@ -141,6 +191,22 @@ public:
         );
     }
 
+    /**
+     * Runs the full OAuth authorization-code flow with PKCE.
+     *
+     * Checks the cache first; valid tokens are reused and expired ones are refreshed.
+     * Spins up a local loopback server, opens the browser, and exchanges the code.
+     *
+     * Params:
+     *  applicationName = Displayed on the success page.
+     *  requestedScope = Space-separated OAuth scopes.
+     *
+     * Returns:
+     *  A valid token bundle.
+     *
+     * Throws:
+     *  OAuthError if authorization fails, the state mismatches, or the token exchange fails.
+     */
     TokenBundle authorize(string applicationName, string requestedScope)
     {
         TokenBundle cached = cache.load(this);
@@ -221,6 +287,20 @@ public:
         return ret;
     }
 
+    /**
+     * Refreshes an access token using the refresh token.
+     *
+     * Preserves the original refresh token and granted scope if the response omits them.
+     *
+     * Params:
+     *  token = The token bundle containing a refresh token.
+     *
+     * Returns:
+     *  A new token bundle with a fresh access token.
+     *
+     * Throws:
+     *  OAuthError if no refresh token is present or the refresh request fails.
+     */
     TokenBundle refresh(TokenBundle token)
     {
         if (token.refreshToken == null)
@@ -245,6 +325,18 @@ public:
         return ret;
     }
 
+    /**
+     * Revokes a token at the provider and clears the cache.
+     *
+     * Prefers revoking the refresh token; falls back to the access token.
+     * If no revokeUrl is configured, only the cache is cleared.
+     *
+     * Params:
+     *  token = The token bundle to revoke.
+     *
+     * Throws:
+     *  OAuthError if the revocation request fails with a non-2xx status.
+     */
     void revoke(TokenBundle token)
     {
         string value = token.refreshToken != null ? token.refreshToken : token.accessToken;
