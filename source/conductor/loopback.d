@@ -1,3 +1,4 @@
+/// Lightweight local TCP server for catching OAuth redirects and test callbacks.
 module conductor.loopback;
 
 import conductor.query : parseQuery;
@@ -8,14 +9,20 @@ import std.socket;
 import std.string : indexOf, split, splitLines;
 import std.uni : toLower;
 
+/// Parsed incoming request to the loopback server.
 struct LoopbackRequest
 {
+    /// HTTP method (e.g. "GET").
     string method;
+    /// Request path without query string.
     string path;
+    /// Parsed query parameters.
     string[string] query;
+    /// Request headers keyed by lower-cased name.
     string[string] headers;
 }
 
+/// Minimal TCP server that binds to localhost and parses one HTTP request.
 class LoopbackServer
 {
 private:
@@ -24,6 +31,13 @@ private:
     ushort port_;
 
 public:
+    /**
+     * Binds to the given host and port.
+     *
+     * Params:
+     *  host = The bind address. Defaults to 127.0.0.1.
+     *  port = The bind port. Zero lets the OS assign an available port.
+     */
     this(string host = "127.0.0.1", ushort port = 0)
     {
         listener = new Socket(AddressFamily.INET, SocketType.STREAM);
@@ -42,9 +56,24 @@ public:
             listener.close();
     }
 
+    /// The bound port. Useful when port was 0.
     ushort port() const
         => port_;
 
+    /**
+     * Waits for a single HTTP request and parses it.
+     *
+     * Blocks until a connection arrives or the timeout expires.
+     *
+     * Params:
+     *  timeout = Maximum time to wait for a connection.
+     *
+     * Returns:
+     *  The parsed loopback request.
+     *
+     * Throws:
+     *  SocketException if the timeout expires.
+     */
     LoopbackRequest waitOnce(Duration timeout)
     {
         SocketSet set = new SocketSet();
@@ -70,6 +99,17 @@ public:
         return ret;
     }
 
+    /**
+     * Sends a simple HTML response and closes the connection.
+     *
+     * Params:
+     *  html = The HTML body to send.
+     *  status = HTTP status code.
+     *  reason = HTTP reason phrase.
+     *
+     * Throws:
+     *  Exception if no client is connected.
+     */
     void respondHtml(string html, ushort status = 200, string reason = "OK")
     {
         enforce(connection !is null, "No loopback client is connected.");
@@ -106,9 +146,7 @@ private:
         string target = requestLine[1];
         ptrdiff_t questionMark = target.indexOf('?');
         if (questionMark < 0)
-        {
             ret.path = target;
-        }
         else
         {
             ret.path = target[0..questionMark];
