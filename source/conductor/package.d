@@ -1,3 +1,4 @@
+/// HTTP, OAuth, serialization, and network orchestration utilities for API integrations.
 module conductor;
 
 public import conductor.http;
