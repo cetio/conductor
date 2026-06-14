@@ -3,7 +3,7 @@
 		"cet"
 	],
 	"copyright": "Copyright © 2026, cet",
-	"description": "HTTP, OAuth, serialization, and network orchestration utilities for API integrations.",
+	"description": "Library for HTTP, OAuth, serialization, and network orchestration for API integrations.",
 	"license": "AGPL-3.0-only",
 	"name": "conductor"
 }
