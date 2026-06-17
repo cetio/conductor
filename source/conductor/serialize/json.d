@@ -1,4 +1,4 @@
-/// Reflection-driven `toJSON` and `fromJSON` with `@Name` and `@Required` UDAs.
+/// Bidirectional JSON serialization with UDAs for formatting.
 module conductor.serialize.json;
 
 import std.conv : to;

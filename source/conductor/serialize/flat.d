@@ -1,4 +1,4 @@
-/// Struct-to-byte serialization with `@Endian` and `@StorageKind` UDAs.
+/// Bidirectional flat (binary) serialization with UDAs for formatting.
 module conductor.serialize.flat;
 
 import std.algorithm.mutation : reverse;

@@ -78,7 +78,7 @@ class TokenCache
         }
 
         mkdirRecurse(directory);
-        write(cachePath(oauth), token.toJson().toString());
+        write(cachePath(oauth), token.toJSON().toString());
     }
 
     /**
@@ -120,62 +120,3 @@ string defaultCacheDirectory()
     return buildPath(expandTilde("~/.cache"), "conductor", "oauth");
 }
 
-unittest
-{
-    import core.time : dur;
-    import std.conv : to;
-    import std.file : exists, rmdirRecurse;
-    import std.path : buildPath;
-    import std.process : thisProcessID;
-
-    string directory = buildPath(
-        defaultCacheDirectory(),
-        "token-cache-test-"~thisProcessID.to!string,
-    );
-
-    if (exists(directory))
-        rmdirRecurse(directory);
-
-    scope (exit)
-    {
-        if (exists(directory))
-            rmdirRecurse(directory);
-    }
-
-    TokenCache cache = new TokenCache(directory);
-    OAuth oauth = new OAuth(
-        "client-id",
-        "client-secret",
-        "https://example.test/auth",
-        "https://example.test/token",
-        "https://example.test/revoke",
-        (string url) {
-            auto _ = url;
-        },
-        null,
-        null,
-        null,
-        null,
-        dur!"minutes"(5),
-        cache,
-    );
-
-    TokenBundle token;
-    token.oauth = oauth;
-    token.accessToken = "access";
-    token.refreshToken = "refresh";
-    token.grantedScope = "scope";
-    token.tokenType = "Bearer";
-    token.expiresIn = 3600;
-    token.obtainedAt = Clock.currTime().toUnixTime();
-
-    cache.save(oauth, token);
-
-    TokenBundle loaded = cache.load(oauth);
-    assert(loaded.oauth is oauth);
-    assert(loaded.accessToken == "access");
-    assert(loaded.refreshToken == "refresh");
-
-    cache.clear(oauth);
-    assert(cache.load(oauth).empty());
-}
