@@ -4,7 +4,8 @@ module conductor.oauth.portal;
 import conductor.http : Response, send;
 import conductor.loopback : LoopbackRequest, LoopbackServer;
 import conductor.oauth.cache : TokenCache;
-import conductor.oauth.token : OAuthError, TokenBundle;
+import conductor.oauth.exception;
+import conductor.oauth.token : TokenBundle;
 import conductor.query : buildURL, formEncode;
 import core.time : Duration, dur;
 import std.base64 : Base64URLNoPadding;
@@ -59,7 +60,7 @@ public:
      *  cache = Token cache. A default cache is created if null.
      *
      * Throws:
-     *  OAuthError if clientId, clientSecret, authorizeUrl, or tokenUrl is null.
+     *  OAuthArgumentException if clientId, clientSecret, authorizeUrl, or tokenUrl is null.
      */
     this(
         string clientId,
@@ -77,16 +78,16 @@ public:
     )
     {
         if (clientId == null)
-            throw new OAuthError("OAuth credentials do not include a client ID.");
+            throw new OAuthArgumentException("OAuth credentials do not include a client ID.");
 
         if (clientSecret == null)
-            throw new OAuthError("OAuth credentials do not include a client secret.");
+            throw new OAuthArgumentException("OAuth credentials do not include a client secret.");
 
         if (authorizeUrl == null)
-            throw new OAuthError("OAuth credentials do not include an authorization URL.");
+            throw new OAuthArgumentException("OAuth credentials do not include an authorization URL.");
 
         if (tokenUrl == null)
-            throw new OAuthError("OAuth credentials do not include a token URL.");
+            throw new OAuthArgumentException("OAuth credentials do not include a token URL.");
 
         this.clientId = clientId;
         this.clientSecret = clientSecret;
@@ -142,7 +143,7 @@ public:
      *  The parsed OAuth configuration.
      *
      * Throws:
-     *  OAuthError if the JSON is not an object.
+     *  OAuthFormatException if the JSON is not an object.
      */
     static OAuth fromJSON(
         JSONValue json,
@@ -156,7 +157,7 @@ public:
     )
     {
         if (json.type != JSONType.object)
-            throw new OAuthError("OAuth JSON must be an object.");
+            throw new OAuthFormatException("OAuth JSON must be an object.");
 
         if ("web" in json)
             json = json["web"];
@@ -164,7 +165,7 @@ public:
             json = json["installed"];
 
         if (json.type != JSONType.object)
-            throw new OAuthError("OAuth JSON must be an object.");
+            throw new OAuthFormatException("OAuth JSON must be an object.");
 
         string revokeUrlValue = "revoke_uri" in json ? json["revoke_uri"].str : null;
         if (revokeUrlValue == null &&
@@ -205,7 +206,9 @@ public:
      *  A valid token bundle.
      *
      * Throws:
-     *  OAuthError if authorization fails, the state mismatches, or the token exchange fails.
+     *  OAuthAuthorizationException if authorization fails, the state mismatches.
+     *  OAuthServerException if the token exchange fails.
+     *  OAuthFormatException if the token response is malformed.
      */
     TokenBundle authorize(string applicationName, string requestedScope)
     {
@@ -219,7 +222,7 @@ public:
             {
                 try
                     return refresh(cached);
-                catch (OAuthError)
+                catch (Exception)
                     cache.clear(this);
             }
         }
@@ -228,7 +231,7 @@ public:
         string state = randomToken(32);
         string challenge = Base64URLNoPadding.encode(sha256Of(verifier)).idup;
         LoopbackServer loopback = new LoopbackServer();
-        string redirectUri = "http://127.0.0.1:"~to!string(loopback.port());
+        string redirectUri = "http://127.0.0.1:"~to!string(loopback.port);
 
         string[string] query;
         query["access_type"] = "offline";
@@ -251,7 +254,7 @@ public:
         if (err != null)
         {
             loopback.respondHtml(onFailure(err), 400, "Bad Request");
-            throw new OAuthError("OAuth authorization failed: "~err);
+            throw new OAuthAuthorizationException("OAuth authorization failed: "~err);
         }
 
         if (returnedState != state)
@@ -259,14 +262,14 @@ public:
             string detail = "Expected "~(state == null ? "<empty>" : state)~
                 " but received "~(returnedState == null ? "<empty>" : returnedState)~".";
             loopback.respondHtml(onMismatch(detail), 400, "Bad Request");
-            throw new OAuthError("OAuth authorization state did not match the original request.");
+            throw new OAuthAuthorizationException("OAuth authorization state did not match the original request.");
         }
 
         if (code == null)
         {
             string detail = "OAuth authorization did not return a code.";
             loopback.respondHtml(onIncomplete(detail), 400, "Bad Request");
-            throw new OAuthError(detail);
+            throw new OAuthAuthorizationException(detail);
         }
 
         loopback.respondHtml(onSuccess(applicationName));
@@ -299,12 +302,14 @@ public:
      *  A new token bundle with a fresh access token.
      *
      * Throws:
-     *  OAuthError if no refresh token is present or the refresh request fails.
+     *  OAuthArgumentException if no refresh token is present.
+     *  OAuthServerException if the refresh request fails.
+     *  OAuthFormatException if the token response is malformed.
      */
     TokenBundle refresh(TokenBundle token)
     {
         if (token.refreshToken == null)
-            throw new OAuthError("OAuth refresh requires a refresh token.");
+            throw new OAuthArgumentException("OAuth refresh requires a refresh token.");
 
         TokenBundle ret = requestToken(
             [
@@ -335,7 +340,7 @@ public:
      *  token = The token bundle to revoke.
      *
      * Throws:
-     *  OAuthError if the revocation request fails with a non-2xx status.
+     *  OAuthServerException if the revocation request fails with a non-2xx status.
      */
     void revoke(TokenBundle token)
     {
@@ -386,7 +391,7 @@ public:
                     message = cast(string)response.content;
             }
 
-            throw new OAuthError(message);
+            throw new OAuthServerException(message);
         }
 
         cache.clear(this);
@@ -435,14 +440,14 @@ private:
                     message = cast(string)response.content;
             }
 
-            throw new OAuthError(message);
+            throw new OAuthServerException(message);
         }
 
         JSONValue json = response.content == null ? JSONValue.init : parseJSON(cast(string)response.content);
         TokenBundle ret = TokenBundle.fromJson(this, json);
 
         if (ret.accessToken == null)
-            throw new OAuthError("OAuth token response did not include an access token.");
+            throw new OAuthFormatException("OAuth token response did not include an access token.");
 
         return ret;
     }

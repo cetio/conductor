@@ -25,12 +25,10 @@ struct LoopbackRequest
 /// Minimal TCP server that binds to localhost and parses one HTTP request.
 class LoopbackServer
 {
-private:
     Socket listener;
     Socket connection;
-    ushort port_;
+    const ushort port;
 
-public:
     /**
      * Binds to the given host and port.
      *
@@ -44,7 +42,7 @@ public:
         listener.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR, true);
         listener.bind(new InternetAddress(host, port));
         listener.listen(1);
-        port_ = (cast(InternetAddress)listener.localAddress).port;
+        this.port = (cast(InternetAddress)listener.localAddress).port;
     }
 
     ~this()
@@ -55,10 +53,6 @@ public:
         if (listener !is null)
             listener.close();
     }
-
-    /// The bound port. Useful when port was 0.
-    ushort port() const
-        => port_;
 
     /**
      * Waits for a single HTTP request and parses it.

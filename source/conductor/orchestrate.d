@@ -18,17 +18,17 @@ struct Orchestrator
 
 private:
     HTTP _http;
-    bool _httpInit;
+    bool _initialized;
     SysTime lastRequestTime;
 
 public:
     /// Lazily initializes and returns a reusable HTTP client.
     ref HTTP client()
     {
-        if (!_httpInit)
+        if (!_initialized)
         {
             _http = HTTP();
-            _httpInit = true;
+            _initialized = true;
         }
         return _http;
     }

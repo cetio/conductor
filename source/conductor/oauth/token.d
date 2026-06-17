@@ -1,25 +1,11 @@
 /// OAuth token types and bundle representation.
 module conductor.oauth.token;
 
+import conductor.oauth.exception : OAuthArgumentException;
 import conductor.oauth.portal : OAuth;
 import std.conv : to;
 import std.datetime : Clock;
 import std.json : JSONType, JSONValue;
-
-/// Thrown when an OAuth operation fails.
-class OAuthError : Exception
-{
-    /**
-     * Constructs an OAuthError.
-     *
-     * Params:
-     *  message = The error message.
-     */
-    this(string message)
-    {
-        super(message);
-    }
-}
 
 /// Holds the tokens and metadata returned by an OAuth flow.
 struct TokenBundle

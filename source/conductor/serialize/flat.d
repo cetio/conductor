@@ -257,9 +257,9 @@ template fieldStorageKind(T, string field)
 /// True for types that are references rather than value types.
 enum isReferenceType(A) = is(A == class) || is(A == interface) || isPointer!A || isDynamicArray!A;
 
-/// Returns a void pointer to a variable, regardless of whether it is a reference type.
+/// Returns a void pointer to variable data, unwrapping reference types.
 pragma(inline, true)
-@trusted scope void* reference(alias V)()
+@trusted scope void* reference(alias V)() nothrow
 {
     static if (isReferenceType!(typeof(V)))
         return cast(void*)V;
@@ -268,7 +268,7 @@ pragma(inline, true)
 }
 
 /// Reverses the byte order of an array if endian conversion is needed.
-ubyte[] endianize(ubyte[] arr, Endian endian)
+ubyte[] endianize(ubyte[] arr, Endian endian) nothrow
 {
     version (BigEndian)
     {
