@@ -2,8 +2,29 @@
 	"authors": [
 		"cet"
 	],
+	"configurations": [
+		{
+			"name": "library",
+			"targetType": "library"
+		},
+		{
+			"buildOptions": [
+				"unittests"
+			],
+			"dependencies": {
+				"unit-threaded": "~>2.2.0"
+			},
+			"mainSourceFile": "bin/ut.d",
+			"name": "unittest",
+			"preBuildCommands": [
+				"$DUB run --compiler=$$DC unit-threaded -c gen_ut_main -- -f bin/ut.d"
+			],
+			"targetType": "executable"
+		}
+	],
 	"copyright": "Copyright © 2026, cet",
 	"description": "Library for HTTP, OAuth, serialization, and network orchestration for API integrations.",
 	"license": "AGPL-3.0-only",
-	"name": "conductor"
+	"name": "conductor",
+	"targetType": "library"
 }
