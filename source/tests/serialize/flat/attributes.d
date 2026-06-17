@@ -1,9 +1,7 @@
 module tests.serialize.flat.attributes;
 
 import conductor.serialize.flat;
-import unit_threaded;
 
-@Name("@Endian(Big) field serializes as big-endian")
 unittest
 {
     struct EndianBig
@@ -16,15 +14,14 @@ unittest
 
     version (LittleEndian)
     {
-        bytes[0].should == 0xAB;
-        bytes[1].should == 0xCD;
+        assert(bytes[0] == 0xAB);
+        assert(bytes[1] == 0xCD);
     }
 
     EndianBig recovered = fromBytes!EndianBig(bytes);
-    recovered.magic.should == 0xABCD;
+    assert(recovered.magic == 0xABCD);
 }
 
-@Name("@Endian(Little) field serializes as little-endian")
 unittest
 {
     struct EndianLittle
@@ -37,15 +34,14 @@ unittest
 
     version (BigEndian)
     {
-        bytes[0].should == 0xCD;
-        bytes[1].should == 0xAB;
+        assert(bytes[0] == 0xCD);
+        assert(bytes[1] == 0xAB);
     }
 
     EndianLittle recovered = fromBytes!EndianLittle(bytes);
-    recovered.magic.should == 0xABCD;
+    assert(recovered.magic == 0xABCD);
 }
 
-@Name("Opposing @Endian fields in same struct serialize independently")
 unittest
 {
     struct OpposingEndian
@@ -59,28 +55,26 @@ unittest
 
     version (LittleEndian)
     {
-        bytes[0].should == 0xAB;
-        bytes[1].should == 0xCD;
+        assert(bytes[0] == 0xAB);
+        assert(bytes[1] == 0xCD);
     }
 
     OpposingEndian recovered = fromBytes!OpposingEndian(bytes);
-    recovered.magic.should == 0xABCD;
-    recovered.length.should == 1024;
+    assert(recovered.magic == 0xABCD);
+    assert(recovered.length == 1024);
 }
 
-@Name("Mismatched endian recovers wrong value; correct endian recovers original")
 unittest
 {
     uint original = 0x12345678;
     ubyte[] big = toBytes(original, Endian.Big);
     uint wrong = fromBytes!uint(big, Endian.Little);
-    shouldNotEqual(wrong, original);
+    assert(wrong != original);
 
     uint recovered = fromBytes!uint(big, Endian.Big);
-    recovered.should == original;
+    assert(recovered == original);
 }
 
-@Name("@StorageKind(Length) dynamic array field serializes with length prefix")
 unittest
 {
     struct LengthArray
@@ -91,13 +85,12 @@ unittest
     LengthArray original = LengthArray([10, 20, 30]);
     ubyte[] bytes = toBytes(original);
 
-    bytes.length.should == size_t.sizeof + (3 * int.sizeof);
+    assert(bytes.length == size_t.sizeof + (3 * int.sizeof));
 
     LengthArray recovered = fromBytes!LengthArray(bytes);
-    recovered.payload.should == [10, 20, 30];
+    assert(recovered.payload == [10, 20, 30]);
 }
 
-@Name("@StorageKind(Length) empty array serializes as length prefix only")
 unittest
 {
     struct LengthEmpty
@@ -108,13 +101,12 @@ unittest
     LengthEmpty original;
     ubyte[] bytes = toBytes(original);
 
-    bytes.length.should == size_t.sizeof;
+    assert(bytes.length == size_t.sizeof);
 
     LengthEmpty recovered = fromBytes!LengthEmpty(bytes);
-    recovered.payload.length.should == 0;
+    assert(recovered.payload.length == 0);
 }
 
-@Name("@StorageKind(Terminated) uint array appends terminator excluded from result")
 unittest
 {
     struct TerminatedUint
@@ -125,13 +117,12 @@ unittest
     TerminatedUint original = TerminatedUint([1, 2]);
     ubyte[] bytes = toBytes(original);
 
-    bytes.length.should == 3 * uint.sizeof;
+    assert(bytes.length == 3 * uint.sizeof);
 
     TerminatedUint recovered = fromBytes!TerminatedUint(bytes);
-    recovered.values.should == [1, 2];
+    assert(recovered.values == [1, 2]);
 }
 
-@Name("@StorageKind(Terminated) unterminated data throws")
 unittest
 {
     struct TerminatedUbyte
@@ -145,10 +136,9 @@ unittest
         fromBytes!TerminatedUbyte(data);
     catch (Exception)
         threw = true;
-    threw.should == true;
+    assert(threw);
 }
 
-@Name("@StorageKind(None) field consumes all remaining bytes")
 unittest
 {
     struct NoneArray
@@ -160,26 +150,24 @@ unittest
     NoneArray original = NoneArray(1, [10, 20, 30]);
     ubyte[] bytes = toBytes(original);
 
-    bytes.length.should == uint.sizeof + 3;
+    assert(bytes.length == uint.sizeof + 3);
 
     NoneArray recovered = fromBytes!NoneArray(bytes);
-    recovered.header.should == 1;
-    recovered.payload.should == [10, 20, 30];
+    assert(recovered.header == 1);
+    assert(recovered.payload == [10, 20, 30]);
 }
 
-@Name("@StorageKind(None) empty array produces zero bytes")
 unittest
 {
     ubyte[] empty;
     ubyte[] bytes = toBytes(empty, Endian.Native, StorageKind.None);
 
-    bytes.length.should == 0;
+    assert(bytes.length == 0);
 
     ubyte[] recovered = fromBytes!(ubyte[])(bytes, Endian.Native, StorageKind.None);
-    recovered.length.should == 0;
+    assert(recovered.length == 0);
 }
 
-@Name("@Endian on nested struct field overrides outer default")
 unittest
 {
     struct Inner
@@ -198,16 +186,15 @@ unittest
 
     version (LittleEndian)
     {
-        bytes[0].should == 0x12;
-        bytes[1].should == 0x34;
+        assert(bytes[0] == 0x12);
+        assert(bytes[1] == 0x34);
     }
 
     Outer recovered = fromBytes!Outer(bytes);
-    recovered.inner.value.should == 0x1234;
-    recovered.count.should == 42;
+    assert(recovered.inner.value == 0x1234);
+    assert(recovered.count == 42);
 }
 
-@Name("Missing @StorageKind on dynamic array field does not compile")
 unittest
 {
     struct MissingStorageKind

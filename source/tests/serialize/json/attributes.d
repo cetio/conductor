@@ -1,11 +1,8 @@
 module tests.serialize.json.attributes;
 
 import conductor.serialize.json;
-import unit_threaded.assertions;
-import unit_threaded.runner.attrs : TestName = Name;
 import std.json : JSONValue, JSONType;
 
-@TestName("@Name replaces field name as JSON key")
 unittest
 {
     struct Renamed
@@ -15,12 +12,11 @@ unittest
 
     Renamed original = Renamed(5);
     JSONValue json = toJSON(original);
-    ("custom_name" in json).shouldNotBeNull;
-    ("value" in json).shouldBeNull;
-    json["custom_name"].integer.should == 5;
+    assert("custom_name" in json);
+    assert(("value" in json) is null);
+    assert(json["custom_name"].integer == 5);
 }
 
-@TestName("@Name field roundtrips: deserialize from renamed key recovers value")
 unittest
 {
     struct Renamed
@@ -30,10 +26,9 @@ unittest
 
     JSONValue json = JSONValue(["custom_name": JSONValue(5)]);
     Renamed recovered = fromJSON!Renamed(json);
-    recovered.value.should == 5;
+    assert(recovered.value == 5);
 }
 
-@TestName("@Name on string field: null string serializes as JSON null under custom key")
 unittest
 {
     struct RenamedString
@@ -43,11 +38,10 @@ unittest
 
     RenamedString original;
     JSONValue json = toJSON(original);
-    ("alias" in json).shouldNotBeNull;
-    json["alias"].type.should == JSONType.null_;
+    assert("alias" in json);
+    assert(json["alias"].type == JSONType.null_);
 }
 
-@TestName("Multiple @Name fields in one struct: each uses its own key")
 unittest
 {
     struct ManyRenamed
@@ -58,16 +52,15 @@ unittest
 
     ManyRenamed original = ManyRenamed(1, 2);
     JSONValue json = toJSON(original);
-    ("a" in json).shouldNotBeNull;
-    ("b" in json).shouldNotBeNull;
-    ("alpha" in json).shouldBeNull;
-    ("beta" in json).shouldBeNull;
-    json["a"].integer.should == 1;
-    json["b"].integer.should == 2;
-    fromJSON!ManyRenamed(json).should == original;
+    assert("a" in json);
+    assert("b" in json);
+    assert(("alpha" in json) is null);
+    assert(("beta" in json) is null);
+    assert(json["a"].integer == 1);
+    assert(json["b"].integer == 2);
+    assert(fromJSON!ManyRenamed(json) == original);
 }
 
-@TestName("@Name on nested struct field: key renamed at outer level only")
 unittest
 {
     struct Inner
@@ -82,13 +75,12 @@ unittest
 
     Outer original = Outer(Inner(7));
     JSONValue json = toJSON(original);
-    ("inner_data" in json).shouldNotBeNull;
-    ("inner" in json).shouldBeNull;
-    json["inner_data"]["value"].integer.should == 7;
-    fromJSON!Outer(json).inner.value.should == 7;
+    assert("inner_data" in json);
+    assert(("inner" in json) is null);
+    assert(json["inner_data"]["value"].integer == 7);
+    assert(fromJSON!Outer(json).inner.value == 7);
 }
 
-@TestName("@Required field present: deserializes without throwing")
 unittest
 {
     struct RequiredPresent
@@ -98,10 +90,9 @@ unittest
 
     JSONValue json = JSONValue(["mandatory": JSONValue(10)]);
     RequiredPresent recovered = fromJSON!RequiredPresent(json);
-    recovered.mandatory.should == 10;
+    assert(recovered.mandatory == 10);
 }
 
-@TestName("@Required field absent: throws with informative exception")
 unittest
 {
     struct RequiredMissing
@@ -114,10 +105,9 @@ unittest
         fromJSON!RequiredMissing(JSONValue.emptyObject);
     catch (Exception)
         threw = true;
-    threw.should == true;
+    assert(threw);
 }
 
-@TestName("@Required + @Name: missing custom-named required field throws")
 unittest
 {
     struct RequiredRenamed
@@ -130,10 +120,9 @@ unittest
         fromJSON!RequiredRenamed(JSONValue.emptyObject);
     catch (Exception)
         threw = true;
-    threw.should == true;
+    assert(threw);
 }
 
-@TestName("@Required + @Name: present custom-named required field deserializes")
 unittest
 {
     struct RequiredRenamed
@@ -143,10 +132,9 @@ unittest
 
     JSONValue json = JSONValue(["custom": JSONValue(42)]);
     RequiredRenamed recovered = fromJSON!RequiredRenamed(json);
-    recovered.value.should == 42;
+    assert(recovered.value == 42);
 }
 
-@TestName("Non-required field absent: defaults to T.init, no exception")
 unittest
 {
     struct OptionalOnly
@@ -157,11 +145,10 @@ unittest
 
     JSONValue json = JSONValue(["alpha": JSONValue(1)]);
     OptionalOnly recovered = fromJSON!OptionalOnly(json);
-    recovered.alpha.should == 1;
-    recovered.beta.should == int.init;
+    assert(recovered.alpha == 1);
+    assert(recovered.beta == int.init);
 }
 
-@TestName("Multiple @Required fields: missing any throws")
 unittest
 {
     struct DualRequired
@@ -175,5 +162,5 @@ unittest
         fromJSON!DualRequired(JSONValue.emptyObject);
     catch (Exception)
         threw = true;
-    threw.should == true;
+    assert(threw);
 }

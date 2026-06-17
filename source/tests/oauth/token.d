@@ -2,10 +2,8 @@ module tests.oauth.token;
 
 import conductor.oauth.portal;
 import conductor.oauth.token;
-import unit_threaded;
 import std.json : JSONValue;
 
-@Name("TokenBundle roundtrips JSON and expiry")
 unittest
 {
     OAuth oauth = new OAuth(
@@ -25,22 +23,22 @@ unittest
     json["expires_in"] = JSONValue(3600L);
 
     TokenBundle token = TokenBundle.fromJson(oauth, json);
-    token.oauth.should == oauth;
-    token.accessToken.should == "access";
-    token.refreshToken.should == "refresh";
-    token.grantedScope.should == "scope-a scope-b";
-    token.tokenType.should == "Bearer";
-    token.expiresIn.should == 3600;
-    (token.obtainedAt > 0).should == true;
-    token.expired().should == false;
-    token.toJSON()["access_token"].str.should == "access";
-    token.toJSON()["refresh_token"].str.should == "refresh";
+    assert(token.oauth == oauth);
+    assert(token.accessToken == "access");
+    assert(token.refreshToken == "refresh");
+    assert(token.grantedScope == "scope-a scope-b");
+    assert(token.tokenType == "Bearer");
+    assert(token.expiresIn == 3600);
+    assert(token.obtainedAt > 0);
+    assert(!token.expired());
+    assert(token.toJSON()["access_token"].str == "access");
+    assert(token.toJSON()["refresh_token"].str == "refresh");
 
     JSONValue cached = token.toJSON();
     TokenBundle restored = TokenBundle.fromJson(oauth, cached);
-    restored.expiresIn.should == 3600;
-    restored.obtainedAt.should == token.obtainedAt;
-    restored.expired().should == false;
+    assert(restored.expiresIn == 3600);
+    assert(restored.obtainedAt == token.obtainedAt);
+    assert(!restored.expired());
 
     JSONValue tokenResponse = JSONValue.emptyObject;
     tokenResponse["access_token"] = JSONValue("response-access");
@@ -48,8 +46,8 @@ unittest
     tokenResponse["expires_in"] = JSONValue(3600L);
 
     TokenBundle responseToken = TokenBundle.fromJson(oauth, tokenResponse);
-    responseToken.accessToken.should == "response-access";
-    responseToken.tokenType.should == "Bearer";
-    responseToken.expiresIn.should == 3600;
-    (responseToken.obtainedAt > 0).should == true;
+    assert(responseToken.accessToken == "response-access");
+    assert(responseToken.tokenType == "Bearer");
+    assert(responseToken.expiresIn == 3600);
+    assert(responseToken.obtainedAt > 0);
 }

@@ -1,10 +1,8 @@
 module tests.oauth.portal;
 
 import conductor.oauth.portal;
-import unit_threaded;
 import std.json : JSONValue;
 
-@Name("OAuth.fromJSON parses direct object")
 unittest
 {
     JSONValue direct = JSONValue.emptyObject;
@@ -15,14 +13,13 @@ unittest
     direct["revoke_uri"] = JSONValue("https://example.test/revoke");
 
     OAuth directOAuth = OAuth.fromJSON(direct);
-    directOAuth.clientId.should == "client-id";
-    directOAuth.clientSecret.should == "client-secret";
-    directOAuth.authorizeUrl.should == "https://example.test/auth";
-    directOAuth.tokenUrl.should == "https://example.test/token";
-    directOAuth.revokeUrl.should == "https://example.test/revoke";
+    assert(directOAuth.clientId == "client-id");
+    assert(directOAuth.clientSecret == "client-secret");
+    assert(directOAuth.authorizeUrl == "https://example.test/auth");
+    assert(directOAuth.tokenUrl == "https://example.test/token");
+    assert(directOAuth.revokeUrl == "https://example.test/revoke");
 }
 
-@Name("OAuth.fromJSON parses wrapped object")
 unittest
 {
     JSONValue inner = JSONValue.emptyObject;
@@ -36,14 +33,13 @@ unittest
     wrapped["installed"] = inner;
 
     OAuth wrappedOAuth = OAuth.fromJSON(wrapped);
-    wrappedOAuth.clientId.should == "client-id";
-    wrappedOAuth.clientSecret.should == "client-secret";
-    wrappedOAuth.authorizeUrl.should == "https://example.test/auth";
-    wrappedOAuth.tokenUrl.should == "https://example.test/token";
-    wrappedOAuth.revokeUrl.should == "https://example.test/revoke";
+    assert(wrappedOAuth.clientId == "client-id");
+    assert(wrappedOAuth.clientSecret == "client-secret");
+    assert(wrappedOAuth.authorizeUrl == "https://example.test/auth");
+    assert(wrappedOAuth.tokenUrl == "https://example.test/token");
+    assert(wrappedOAuth.revokeUrl == "https://example.test/revoke");
 }
 
-@Name("OAuth.fromJSON infers Google revoke URL")
 unittest
 {
     JSONValue google = JSONValue.emptyObject;
@@ -53,5 +49,5 @@ unittest
     google["token_uri"] = JSONValue("https://oauth2.googleapis.com/token");
 
     OAuth googleOAuth = OAuth.fromJSON(google);
-    googleOAuth.revokeUrl.should == "https://oauth2.googleapis.com/revoke";
+    assert(googleOAuth.revokeUrl == "https://oauth2.googleapis.com/revoke");
 }

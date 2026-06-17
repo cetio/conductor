@@ -3,7 +3,6 @@ module tests.oauth.cache;
 import conductor.oauth.cache;
 import conductor.oauth.portal;
 import conductor.oauth.token : TokenBundle;
-import unit_threaded;
 import core.time : dur;
 import std.conv : to;
 import std.datetime : Clock;
@@ -12,7 +11,6 @@ import std.path : buildPath;
 import std.process : thisProcessID;
 import std.file : tempDir;
 
-@Name("TokenCache roundtrips save, load, and clear")
 unittest
 {
     string directory = buildPath(
@@ -57,10 +55,10 @@ unittest
     cache.save(oauth, token);
 
     TokenBundle loaded = cache.load(oauth);
-    loaded.oauth.should == oauth;
-    loaded.accessToken.should == "access";
-    loaded.refreshToken.should == "refresh";
+    assert(loaded.oauth == oauth);
+    assert(loaded.accessToken == "access");
+    assert(loaded.refreshToken == "refresh");
 
     cache.clear(oauth);
-    cache.load(oauth).empty().should == true;
+    assert(cache.load(oauth).empty());
 }
