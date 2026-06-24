@@ -78,7 +78,7 @@ void post(T)(
  *  url = The request URL.
  *  content = Raw request body. May be null for GET/DELETE.
  *  contentType = The Content-Type header value.
- *  headers = Additional request headers.
+ *  headers = Additional request headers. Overwrites http headers if set.
  *
  * Returns:
  *  The HTTP response.
@@ -94,7 +94,8 @@ Response send(
 {
     Response ret;
 
-    http.clearRequestHeaders();
+    if (headers != null)
+        http.clearRequestHeaders();
     http.url = url;
     http.method = method;
 
